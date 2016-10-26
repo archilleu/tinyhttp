@@ -11,12 +11,13 @@ aux_source_directory(. DIR_SRC)
 #add lib path
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../depend/net/lib)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../depend/base/lib)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../depend/json/lib)
 #---------------------------------------------------------------------------
 #generate test
 add_executable(tinyhttp ${DIR_SRC})
 #---------------------------------------------------------------------------
 #add link lib
-target_link_libraries(tinyhttp net base pthread)
+target_link_libraries(tinyhttp net base json pthread)
 #---------------------------------------------------------------------------
 #install target 
 #install(TARGETS json_test DESTINATION ${EXECUTABLE_OUTPUT_PATH})

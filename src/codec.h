@@ -38,6 +38,13 @@ public:
     static const char* kURL;
     static const char* kReqVersion;
 
+    //common header
+    static const char* kConnection;
+    static const char* kDate;
+    static const char* kTrailer;
+    static const char* kTransferEncoding;
+    static const char* kVia;
+
     //request line header
     static const char* kAccept;
     static const char* kAcceptCharset;
@@ -46,11 +53,9 @@ public:
     static const char* kAcceptRanges;
     static const char* kAuthorization;
     static const char* kCacheControl;
-    static const char* kConnection;
     static const char* kCookie;
     static const char* kContentLength;
     static const char* kContentType;
-    static const char* kDate;
     static const char* kExpect;
     static const char* kFrom;
     static const char* kHost;
@@ -67,7 +72,6 @@ public:
     static const char* kTE;
     static const char* kUpgrade;
     static const char* kUserAgent;
-    static const char* kVia;
     static const char* kWarning;
 
     //responeses header 
@@ -92,8 +96,6 @@ public:
     static const char* kRetryAfter;
     static const char* kServer;
     static const char* kSetCookie;
-    static const char* kTrailer;
-    static const char* kTransferEncoding;
     static const char* kVary;
     static const char* kWWWAuthenticate;
 

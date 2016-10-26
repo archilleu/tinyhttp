@@ -9,6 +9,12 @@
 namespace tinyhttp
 {
 
+namespace
+{
+
+const char* kHTMLBadRequest = "HTTP/1.1 200 OK\r\nContent-type:text/html\r\n\r\n";
+}
+
 HTTPServer::HTTPServer()
 {
 }
@@ -29,6 +35,9 @@ void HTTPServer::Start()
     tcp_server.set_callback_read(std::bind(&Codec::OnRead, &codec_, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     tcp_server.set_callback_write_complete(std::bind(&HTTPServer::OnWriteComplete, this, std::placeholders::_1));
     tcp_server.set_callback_high_water_mark(std::bind(&HTTPServer::OnHightWaterMark, this, std::placeholders::_1, std::placeholders::_2), 100);
+
+    codec_.set_callback_req_msg(std::bind(&HTTPServer::OnRequestMessage, this, std::placeholders::_1, std::placeholders::_2));
+
     tcp_server.Start();
     main_loop_->Loop();
 
@@ -57,10 +66,11 @@ void HTTPServer::OnDisconnection(const net::TCPConnPtr& tcp_conn)
     return;
 }
 //---------------------------------------------------------------------------
-void HTTPServer::OnRequestMessage(net::TCPConnPtr& tcp_conn, uint64_t rcv_time)
+void HTTPServer::OnRequestMessage(const net::TCPConnPtr& tcp_conn, uint64_t rcv_time)
 {
     (void)rcv_time;
     codec_.DumpReq(tcp_conn);
+    tcp_conn->Send(kHTMLBadRequest, strlen(kHTMLBadRequest));
 }
 //---------------------------------------------------------------------------
 void HTTPServer::OnWriteComplete(const net::TCPConnPtr& tcp_conn)

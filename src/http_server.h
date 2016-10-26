@@ -26,7 +26,7 @@ public:
 private:
     void OnConnection(const net::TCPConnPtr& tcp_conn);
     void OnDisconnection(const net::TCPConnPtr& tcp_conn);
-    void OnRequestMessage(net::TCPConnPtr& tcp_conn, uint64_t rcv_time);
+    void OnRequestMessage(const net::TCPConnPtr& tcp_conn, uint64_t rcv_time);
     void OnWriteComplete(const net::TCPConnPtr& tcp_conn);
     void OnHightWaterMark(const net::TCPConnPtr& tcp_conn, size_t mark);
 

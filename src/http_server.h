@@ -14,10 +14,13 @@ namespace net
 namespace tinyhttp
 {
 
+class Method;
+class RequestMessage;
+
 class HTTPServer
 {
 public:
-    HTTPServer();
+    HTTPServer(Method* method);
     ~HTTPServer();
 
     void Start();
@@ -37,6 +40,7 @@ private:
     std::shared_ptr<net::TCPServer> tcp_server_;
 
     Codec codec_;
+    Method* method_;
 };
 
 }//namepace tinyhttp

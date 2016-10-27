@@ -8,6 +8,13 @@ namespace tinyhttp
 {
 
 //---------------------------------------------------------------------------
+namespace
+{
+    const char* kDocRoot    = "doc root";
+    const char* kThreadNums = "thread nums";
+}
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 Config MyConfig;
 //---------------------------------------------------------------------------
 Config::Config()
@@ -52,7 +59,7 @@ bool Config::SaveCofig()
 void Config::DefaultConfig()
 {
     //web root
-    web_root_ = ".";
+    doc_root_ = ".";
 
     //thread numbers
     thread_nums_ = 0;
@@ -62,24 +69,20 @@ void Config::DefaultConfig()
 //---------------------------------------------------------------------------
 void Config::LoadWebRoot()
 {
-    static const char* key = "web root";
-
     json::Value jroot;
-    if(false == config_.PairGet(key, &jroot))
-        config_.PairAdd(key, web_root_);
+    if(false == config_.PairGet(kDocRoot, &jroot))
+        config_.PairAdd(kDocRoot, doc_root_);
     else
-        web_root_ = jroot.val();
+        doc_root_ = jroot.val();
 
     return;
 }
 //---------------------------------------------------------------------------
 void Config::LoadThreadNums()
 {
-    static const char* key = "thread nums";
-
     json::Value jnums;
-    if(false == config_.PairGet(key, &jnums))
-        config_.PairAdd(key, thread_nums_);
+    if(false == config_.PairGet(kThreadNums, &jnums))
+        config_.PairAdd(kThreadNums, thread_nums_);
     else
         thread_nums_ = static_cast<int>(jnums.get_uint());
 

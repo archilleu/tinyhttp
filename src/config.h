@@ -3,7 +3,6 @@
 #define TINYHTTP_CONFIG_H_
 //---------------------------------------------------------------------------
 #include <string>
-#include <map>
 #include "../depend/json/include/value.h"
 //---------------------------------------------------------------------------
 namespace tinyhttp 
@@ -17,7 +16,7 @@ public:
     bool LoadCofig();
     bool SaveCofig();
 
-    const std::string& web_root() const { return web_root_; }
+    const std::string& doc_root() const { return doc_root_; }
     int thread_nums() const { return thread_nums_; }
 
     void set_path(const std::string& p) { path_ = p; }
@@ -31,7 +30,7 @@ private:
 
 private:
     //config item
-    std::string web_root_;
+    std::string doc_root_;
     int thread_nums_; 
 
 private:

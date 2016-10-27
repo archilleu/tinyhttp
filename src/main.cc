@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------
 #include "http_server.h"
 #include "config.h"
+#include "method_web.h"
 //---------------------------------------------------------------------------
 #include<string>
 int main(int argc, char** argv)
@@ -12,7 +13,8 @@ int main(int argc, char** argv)
     tinyhttp::MyConfig.LoadCofig();
     tinyhttp::MyConfig.SaveCofig();
 
-    tinyhttp::HTTPServer server;
+    tinyhttp::MethodWeb method;
+    tinyhttp::HTTPServer server(&method);
     server.Start();
 
     return 0;

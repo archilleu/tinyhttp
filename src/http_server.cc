@@ -1,21 +1,52 @@
 //---------------------------------------------------------------------------
 #include <iostream>
+#include <memory>
+#include "method.h"
 #include "http_server.h"
+#include "request_message.h"
 #include "../depend/net/include/event_loop.h"
 #include "../depend/net/include/tcp_server.h"
 #include "../depend/net/include/inet_address.h"
 #include "../depend/net/include/tcp_connection.h"
+#include "../depend/base/include/timestamp.h"
 //---------------------------------------------------------------------------
 namespace tinyhttp
 {
 
+//---------------------------------------------------------------------------
 namespace
 {
 
-const char* kHTMLBadRequest = "HTTP/1.1 200 OK\r\nContent-type:text/html\r\n\r\n";
-}
+//---------------------------------------------------------------------------
+void ReplyBadRequest(const net::TCPConnPtr& tcp_conn)
+{
+    static const char reply[] = "HTTP/1.1 400 Bad Request\r\n"
+        "Content-type: text/html\r\n"
+        "Content-Length: 18\r\n\r\n"
+        "<P>Bad Request</p>";
 
-HTTPServer::HTTPServer()
+    tcp_conn->Send(reply, sizeof(reply));
+    tcp_conn->ForceClose();
+    return;
+}
+//---------------------------------------------------------------------------
+void ReplyNotImplemented(const net::TCPConnPtr& tcp_conn)
+{
+    static const char reply[] = "HTTP/1.1 501 Not Implemented\r\n"
+        "Content-type: text/html\r\n"
+        "Content-Length: 21\r\n\r\n"
+        "<P>Not Implemented<P>";
+
+    tcp_conn->Send(reply, sizeof(reply));
+    tcp_conn->ForceClose();
+    return;
+}
+//---------------------------------------------------------------------------
+
+}
+//---------------------------------------------------------------------------
+HTTPServer::HTTPServer(Method* method)
+:   method_(method)
 {
 }
 //---------------------------------------------------------------------------
@@ -25,6 +56,8 @@ HTTPServer::~HTTPServer()
 //---------------------------------------------------------------------------
 void HTTPServer::Start()
 {
+    assert(method_);
+
     main_loop_ = std::make_shared<net::EventLoop>();
     main_loop_->set_sig_usr1_callback(std::bind(&HTTPServer::SignalUsr1, this));
     main_loop_->SetAsSignalHandleEventLoop();
@@ -68,9 +101,68 @@ void HTTPServer::OnDisconnection(const net::TCPConnPtr& tcp_conn)
 //---------------------------------------------------------------------------
 void HTTPServer::OnRequestMessage(const net::TCPConnPtr& tcp_conn, uint64_t rcv_time)
 {
-    (void)rcv_time;
-    codec_.DumpReq(tcp_conn);
-    tcp_conn->Send(kHTMLBadRequest, strlen(kHTMLBadRequest));
+    std::cout << "recv time:" << base::Timestamp(rcv_time).Datetime(true) << std::endl;
+
+    const RequestMessage* req_msg = std::static_pointer_cast<RequestMessage>(tcp_conn->any_).get();
+    req_msg->Dump();
+
+    if(0 == req_msg->method_)
+    {
+        ReplyBadRequest(tcp_conn);
+        return;
+    }
+
+    if(!strcmp(RequestMessage::kGET, req_msg->method_))
+    {
+        method_->GET(tcp_conn, rcv_time);
+        return;
+    }
+
+    if(!strcmp(RequestMessage::kPOST, req_msg->method_))
+    {
+        method_->POST(tcp_conn, rcv_time);
+        return;
+    }
+
+    if(!strcmp(RequestMessage::kHEAD, req_msg->method_))
+    {
+        method_->HEAD(tcp_conn, rcv_time);
+        return;
+    }
+
+    if(!strcmp(RequestMessage::kPUT, req_msg->method_))
+    {
+        method_->PUT(tcp_conn, rcv_time);
+        return;
+    }
+
+    if(!strcmp(RequestMessage::kDELETE, req_msg->method_))
+    {
+        method_->DELETE(tcp_conn, rcv_time);
+        return;
+    }
+
+    if(!strcmp(RequestMessage::kTRACE, req_msg->method_))
+    {
+        method_->TRANCE(tcp_conn, rcv_time);
+        return;
+    }
+
+    if(!strcmp(RequestMessage::kCONNECT, req_msg->method_))
+    {
+        method_->CONNECT(tcp_conn, rcv_time);
+        return;
+    }
+
+    if(!strcmp(RequestMessage::kOPTIONS, req_msg->method_))
+    {
+        method_->OPTIONS(tcp_conn, rcv_time);
+        return;
+    }
+
+    ReplyNotImplemented(tcp_conn);
+
+    return;
 }
 //---------------------------------------------------------------------------
 void HTTPServer::OnWriteComplete(const net::TCPConnPtr& tcp_conn)

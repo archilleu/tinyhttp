@@ -103,6 +103,7 @@ public:
     //4xx
     static const char* kBadRequest;
     static const char* kNotFound;
+    static const char* kForbidden;
     //5xx
     static const char* kNotImplemented;
 

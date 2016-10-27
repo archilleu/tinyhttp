@@ -40,7 +40,8 @@ const char* RequestMessage::kOK = "200 OK";
 //3xx
 //4xx
 const char* RequestMessage::kBadRequest = "400 Bad Request";
-const char* RequestMessage::kNotFound = "404 Not Found";
+const char* RequestMessage::kNotFound   = "404 Not Found";
+const char* RequestMessage::kForbidden  = "403 Forbidden";
 //5xx
 const char* RequestMessage::kNotImplemented = "501 Not Implemented";
 //---------------------------------------------------------------------------

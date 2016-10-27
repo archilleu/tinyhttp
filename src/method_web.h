@@ -18,6 +18,12 @@ public:
     virtual void TRANCE     (const net::TCPConnPtr& tcp_conn, uint64_t rcv_time);
     virtual void DELETE     (const net::TCPConnPtr& tcp_conn, uint64_t rcv_time);
     virtual void CONNECT    (const net::TCPConnPtr& tcp_conn, uint64_t rcv_time);
+
+private:
+    void ResponeseHeader(const net::TCPConnPtr& tcp_conn, const char* status_code, int body_len);
+    void ResponeseNotFound(const net::TCPConnPtr& tcp_conn);
+    void ResponeseForbidden(const net::TCPConnPtr& tcp_conn);
+    void ResponeseFile(const net::TCPConnPtr& tcp_conn, const std::string& path);
 };
 
 }//namespace tinyhttp

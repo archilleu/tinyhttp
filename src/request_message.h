@@ -77,7 +77,7 @@ public:
     char* version_;
     char* url_;
 
-    std::map<char*, char*> req_lines_;
+    std::map<const char*, const char*> req_lines_;
 
     int rq_size_;   //current parse request message size
 

@@ -32,16 +32,25 @@ void Codec::OnRead(const net::TCPConnPtr& tcp_conn, net::Buffer& buffer, uint64_
     }
 
     //read request line
-    if(true == GetRequestLines(tcp_conn, buffer))
+    if(false == GetRequestLines(tcp_conn, buffer))
+        return;
+
+    //check has body?
+    auto iter = req_msg->req_lines_.find(RequestMessage::kContentLength);
+    if(req_msg->req_lines_.end() != iter)
     {
-        callback_req_msg_(tcp_conn, rcv_time);
-        buffer.Retrieve(req_msg->rq_size_);
-        req_msg->reset();
+        req_msg->body_      = const_cast<char*>(buffer.Peek() + req_msg->rq_size_);
+        req_msg->body_len_  = atoi(iter->second);
+        if(buffer.ReadableBytes() < static_cast<size_t>((req_msg->rq_size_+req_msg->body_len_)))
+            return;
+
+        req_msg->rq_size_ += req_msg->body_len_;
     }
 
-    //read body
-    //todo
-
+    callback_req_msg_(tcp_conn, rcv_time);
+    buffer.Retrieve(req_msg->rq_size_);
+    req_msg->reset();
+    
     return;
 }
 //---------------------------------------------------------------------------
@@ -81,9 +90,7 @@ bool Codec::GetRequestHeader(const net::TCPConnPtr& tcp_conn, net::Buffer& buffe
 
     req_msg->rq_size_ += static_cast<int>(len + sizeof(kCRLF));
 
-    if( req_msg->method_==0 ||
-        req_msg->url_==0    ||
-        req_msg->version_==0)
+    if((0==req_msg->method_) || (0==req_msg->url_) || (0==req_msg->version_))
     {
         req_msg->method_ = 0;
         return false;
@@ -104,9 +111,6 @@ bool Codec::GetRequestLines(const net::TCPConnPtr& tcp_conn, net::Buffer& buffer
     {
         //not enought data
         int readable = static_cast<int>(buffer.ReadableBytes() - req_msg->rq_size_);
-        if(static_cast<int>(sizeof(kCRLF)) > readable)
-            return false;
-
         char* begin = const_cast<char*>(buffer.Peek()) + req_msg->rq_size_;
         const char* crlf = FindCRLF(begin, readable);
         if(0 == crlf)
@@ -141,7 +145,7 @@ bool Codec::GetRequestLines(const net::TCPConnPtr& tcp_conn, net::Buffer& buffer
         }
 
         begin[idx] = 0;
-        char*& val = req_msg->req_lines_[begin];
+        const char*& val = req_msg->req_lines_[begin];
 
         //skip ':'
         idx++;

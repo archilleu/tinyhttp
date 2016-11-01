@@ -17,7 +17,7 @@ void RequestMessage::Dump() const
         std::cout << v.first << ":" << v.second << std::endl;
     }
     if(0 != body_)
-        std::cout << "body:" << body_ << std::endl;
+        std::cout << "body len:" << body_len_ << " body:" << body_ << std::endl;
     std::cout << "--------------------------------->" << std::endl;;
 
     return;

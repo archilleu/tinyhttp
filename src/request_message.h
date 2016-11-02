@@ -3,6 +3,7 @@
 #define TINYHTTP_REQUEST_MESSAGE_H_
 //---------------------------------------------------------------------------
 #include <map>
+#include <cstring>
 //---------------------------------------------------------------------------
 /*
  * attention
@@ -77,7 +78,14 @@ public:
     char* version_;
     char* url_;
 
-    std::map<const char*, const char*> req_lines_;
+    struct less 
+    {
+        bool operator()(const char* l, const char* r) const
+        {
+            return std::strcmp(l, r) < 0;
+        }
+    };
+    std::map<const char*, const char*, less> req_lines_;
 
     int rq_size_;   //current parse request message size
 

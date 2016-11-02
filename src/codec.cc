@@ -4,7 +4,6 @@
 #include "../depend/net/include/buffer.h"
 #include "../depend/net/include/tcp_connection.h"
 //---------------------------------------------------------------------------
-//\r\n
 namespace
 {
     const char kCRLF[] = {'\r', '\n'};
@@ -49,6 +48,7 @@ void Codec::OnRead(const net::TCPConnPtr& tcp_conn, net::Buffer& buffer, uint64_
 
     callback_req_msg_(tcp_conn, rcv_time);
     buffer.Retrieve(req_msg->rq_size_);
+    assert(0 == buffer.ReadableBytes());
     req_msg->reset();
     
     return;

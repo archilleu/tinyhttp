@@ -22,6 +22,7 @@ void MethodWeb::GET(const net::TCPConnPtr& tcp_conn, uint64_t rcv_time)
 {
     (void)rcv_time;
     const RequestMessage* req_msg = std::static_pointer_cast<RequestMessage>(tcp_conn->any_).get();
+    req_msg->Dump();
 
     //get current doc root
     std::string url = MyConfig.doc_root() + req_msg->url_;

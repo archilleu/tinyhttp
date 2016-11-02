@@ -104,7 +104,6 @@ void HTTPServer::OnRequestMessage(const net::TCPConnPtr& tcp_conn, uint64_t rcv_
     std::cout << "recv time:" << base::Timestamp(rcv_time).Datetime(true) << std::endl;
 
     const RequestMessage* req_msg = std::static_pointer_cast<RequestMessage>(tcp_conn->any_).get();
-    req_msg->Dump();
 
     if(0 == req_msg->method_)
     {

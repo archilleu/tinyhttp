@@ -7,6 +7,8 @@
 namespace
 {
     const char kCRLF[] = {'\r', '\n'};
+
+    const size_t kHttpDataMax = 1024 * 128;
 }
 //---------------------------------------------------------------------------
 namespace tinyhttp
@@ -15,6 +17,14 @@ namespace tinyhttp
 //---------------------------------------------------------------------------
 void Codec::OnRead(const net::TCPConnPtr& tcp_conn, net::Buffer& buffer, uint64_t rcv_time)
 {
+    //is too much data
+    if(kHttpDataMax < buffer.ReadableBytes())
+    {
+        //todo log
+        tcp_conn->ForceClose();
+        return;
+    }
+
     //is new conn
     if(!tcp_conn->any_)
         tcp_conn->any_ = std::make_shared<RequestMessage>();

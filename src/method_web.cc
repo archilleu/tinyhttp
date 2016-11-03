@@ -83,6 +83,7 @@ void MethodWeb::ResponeseHeader(const net::TCPConnPtr& tcp_conn, const char* sta
     snprintf(responese_header, sizeof(responese_header), 
     "HTTP/1.1 %s\r\n"
     "Content-Type: text/html\r\n"
+    "Connection: keep-alive\r\n"
     "Content-Length: %d\r\n\r\n",
     status_code, body_len);
 

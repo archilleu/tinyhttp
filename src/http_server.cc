@@ -57,6 +57,7 @@ HTTPServer::~HTTPServer()
 void HTTPServer::Start()
 {
     assert(method_);
+    net::EventLoop::SetLogger("/tmp/logger", net::EventLoop::TRACE);
 
     main_loop_ = std::make_shared<net::EventLoop>();
     main_loop_->set_sig_usr1_callback(std::bind(&HTTPServer::SignalUsr1, this));
@@ -169,7 +170,7 @@ void HTTPServer::OnWriteComplete(const net::TCPConnPtr& tcp_conn)
     std::cout << "name:" << tcp_conn->name() <<
         " local: " << tcp_conn->local_addr().IPPort() <<
         " peer: " << tcp_conn->peer_addr().IPPort();
-    std::cout << "complete" << std::endl;
+    std::cout << " complete" << std::endl;
 
     return;
 }
@@ -179,7 +180,7 @@ void HTTPServer::OnHightWaterMark(const net::TCPConnPtr& tcp_conn, size_t mark)
     std::cout << "name:" << tcp_conn->name() <<
         " local: " << tcp_conn->local_addr().IPPort() <<
         " peer: " << tcp_conn->peer_addr().IPPort();
-    std::cout << "mark:" << mark << std::endl;
+    std::cout << " mark:" << mark << std::endl;
 
     return;
 }

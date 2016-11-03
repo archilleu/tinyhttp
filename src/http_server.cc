@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------
 #include <iostream>
 #include <memory>
+#include "config.h"
 #include "method.h"
 #include "http_server.h"
 #include "request_message.h"
@@ -72,6 +73,7 @@ void HTTPServer::Start()
 
     codec_.set_callback_req_msg(std::bind(&HTTPServer::OnRequestMessage, this, std::placeholders::_1, std::placeholders::_2));
 
+    tcp_server.set_event_loop_nums(MyConfig.thread_nums());
     tcp_server.Start();
     main_loop_->Loop();
 

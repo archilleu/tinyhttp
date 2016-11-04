@@ -35,7 +35,6 @@ void MethodWeb::GET(const net::TCPConnPtr& tcp_conn, uint64_t rcv_time)
 //---------------------------------------------------------------------------
 void MethodWeb::POST(const net::TCPConnPtr& tcp_conn, uint64_t rcv_time)
 {
-    (void)tcp_conn;
     (void)rcv_time;
     const RequestMessage* req_msg = std::static_pointer_cast<RequestMessage>(tcp_conn->any_).get();
     req_msg->Dump();
@@ -44,8 +43,10 @@ void MethodWeb::POST(const net::TCPConnPtr& tcp_conn, uint64_t rcv_time)
 //---------------------------------------------------------------------------
 void MethodWeb::HEAD(const net::TCPConnPtr& tcp_conn, uint64_t rcv_time)
 {
-    (void)tcp_conn;
     (void)rcv_time;
+    const RequestMessage* req_msg = std::static_pointer_cast<RequestMessage>(tcp_conn->any_).get();
+    req_msg->Dump();
+    ResponeseHeader(tcp_conn, RequestMessage::kOK, 0);
 }
 //---------------------------------------------------------------------------
 void MethodWeb::OPTIONS(const net::TCPConnPtr& tcp_conn, uint64_t rcv_time)

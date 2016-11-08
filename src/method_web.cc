@@ -15,8 +15,14 @@ namespace tinyhttp
 {
 
 //---------------------------------------------------------------------------
-__thread char t_responese_header[1024];
+__thread char t_responese_header[1024*2];
 __thread char t_file_buffer[1024*64];
+//---------------------------------------------------------------------------
+const char* MethodWeb::kType[] =
+    {
+        "text/html",
+        "UTF-8"
+    };
 //---------------------------------------------------------------------------
 void MethodWeb::GET(const net::TCPConnPtr& tcp_conn, uint64_t rcv_time)
 {
@@ -79,7 +85,7 @@ void MethodWeb::CONNECT(const net::TCPConnPtr& tcp_conn, uint64_t rcv_time)
     (void)rcv_time;
 }
 //---------------------------------------------------------------------------
-void MethodWeb::ResponeseHeader(const net::TCPConnPtr& tcp_conn, const char* status_code, int body_len)
+void MethodWeb::ResponeseHeader(const net::TCPConnPtr& tcp_conn, const char* status_code, int type,  int body_len)
 {
     snprintf(t_responese_header, sizeof(t_responese_header), 
     "HTTP/1.1 %s\r\n"

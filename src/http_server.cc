@@ -1,5 +1,4 @@
 //---------------------------------------------------------------------------
-#include <iostream>
 #include <memory>
 #include "http_config.h"
 #include "method.h"
@@ -57,14 +56,13 @@ HTTPServer::~HTTPServer()
 //---------------------------------------------------------------------------
 void HTTPServer::Start()
 {
-    assert(method_);
-    net::EventLoop::SetLogger("/tmp/logger", net::EventLoop::TRACE);
+    net::EventLoop::SetLogger(MyHTTPConfig.net_log_path(), net::EventLoop::TRACE);
 
     main_loop_ = std::make_shared<net::EventLoop>();
     main_loop_->set_sig_usr1_callback(std::bind(&HTTPServer::SignalUsr1, this));
     main_loop_->SetAsSignalHandleEventLoop();
 
-    net::TCPServer tcp_server(main_loop_.get(), 9981);
+    net::TCPServer tcp_server(main_loop_.get(), MyHTTPConfig.port());
     tcp_server.set_callback_connection(std::bind(&HTTPServer::OnConnection, this, std::placeholders::_1));
     tcp_server.set_callback_disconnection(std::bind(&HTTPServer::OnDisconnection, this, std::placeholders::_1));
     tcp_server.set_callback_read(std::bind(&Codec::OnRead, &codec_, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
@@ -87,25 +85,19 @@ void HTTPServer::Stop()
 //---------------------------------------------------------------------------
 void HTTPServer::OnConnection(const net::TCPConnPtr& tcp_conn)
 {
-    std::cout << "name:" << tcp_conn->name() <<
-        " local: " << tcp_conn->local_addr().IPPort() <<
-        " peer: " << tcp_conn->peer_addr().IPPort() << std::endl;
-
+    (void)tcp_conn;
     return;
 }
 //---------------------------------------------------------------------------
 void HTTPServer::OnDisconnection(const net::TCPConnPtr& tcp_conn)
 {
-    std::cout << "name:" << tcp_conn->name() <<
-        " local: " << tcp_conn->local_addr().IPPort() <<
-        " peer: " << tcp_conn->peer_addr().IPPort() << std::endl;
-
+    (void)tcp_conn;
     return;
 }
 //---------------------------------------------------------------------------
 void HTTPServer::OnRequestMessage(const net::TCPConnPtr& tcp_conn, uint64_t rcv_time)
 {
-    std::cout << "recv time:" << base::Timestamp(rcv_time).Datetime(true) << std::endl;
+    (void)rcv_time;
 
     const RequestMessage* req_msg = std::static_pointer_cast<RequestMessage>(tcp_conn->any_).get();
 
@@ -164,30 +156,21 @@ void HTTPServer::OnRequestMessage(const net::TCPConnPtr& tcp_conn, uint64_t rcv_
 //---------------------------------------------------------------------------
 void HTTPServer::OnWriteComplete(const net::TCPConnPtr& tcp_conn)
 {
-    std::cout << "name:" << tcp_conn->name() <<
-        " local: " << tcp_conn->local_addr().IPPort() <<
-        " peer: " << tcp_conn->peer_addr().IPPort();
-    std::cout << " complete" << std::endl;
-
+    (void)tcp_conn;
     return;
 }
 //---------------------------------------------------------------------------
 void HTTPServer::OnHightWaterMark(const net::TCPConnPtr& tcp_conn, size_t mark)
 {
-    std::cout << "name:" << tcp_conn->name() <<
-        " local: " << tcp_conn->local_addr().IPPort() <<
-        " peer: " << tcp_conn->peer_addr().IPPort();
-    std::cout << " mark:" << mark << std::endl;
-
+    (void)tcp_conn;
+    (void)mark;
     return;
 }
 //---------------------------------------------------------------------------
 void HTTPServer::OnCodecError(const net::TCPConnPtr& tcp_conn, const std::string& msg)
 {
-    std::cout << "name:" << tcp_conn->name() <<
-        " local: " << tcp_conn->local_addr().IPPort() <<
-        " peer: " << tcp_conn->peer_addr().IPPort();
-    std::cout << " err msg:" << msg << std::endl;
+    (void)tcp_conn;
+    (void)msg;
 
     ReplyBadRequest(tcp_conn);
 }

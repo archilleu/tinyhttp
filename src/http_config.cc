@@ -11,11 +11,13 @@ namespace tinyhttp
 namespace
 {
     const char* kDocRoot        = "doc root";
+    const char* kNetLogPath     = "net log path";
+    const char* kHTTPLogPath    = "http log path";
     const char* kThreadNums     = "thread nums";
     const char* kMaxHeaderSize  = "max header size";
     const char* kMaxBodySize    = "max body size";
+    const char* kPort           = "port";
 }
-//---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 HTTPConfig MyHTTPConfig;
 //---------------------------------------------------------------------------
@@ -32,9 +34,12 @@ bool HTTPConfig::LoadCofig()
     reader.ParseFile(path_, &config_);
 
     LoadWebRoot();
+    LoadNetLogPath();
+    LoadHTTPLogPath();
     LoadThreadNums();
     LoadMaxHeaderSize();
     LoadMaxBodySize();
+    LoadPort();
 
     return true;
 }
@@ -60,9 +65,12 @@ bool HTTPConfig::SaveCofig()
 void HTTPConfig::DefaultHTTPConfig()
 {
     doc_root_ = ".";
+    net_log_path_ = "/tmp/net log";
+    http_log_path_ = "/tmp/http log";
     thread_nums_ = 0;
     max_header_size_ = 1024*2;
     max_body_size_ = 1024*8;
+    port_ = 9981;
 
     return;
 }
@@ -74,6 +82,28 @@ void HTTPConfig::LoadWebRoot()
         config_.PairAdd(kDocRoot, doc_root_);
     else
         doc_root_ = jroot.val();
+
+    return;
+}
+//---------------------------------------------------------------------------
+void HTTPConfig::LoadNetLogPath()
+{
+    json::Value jnet_path;
+    if(false == config_.PairGet(kNetLogPath, &jnet_path))
+        config_.PairAdd(kNetLogPath, net_log_path_);
+    else
+        doc_root_ = jnet_path.val();
+
+    return;
+}
+//---------------------------------------------------------------------------
+void HTTPConfig::LoadHTTPLogPath()
+{
+    json::Value jhttp_path;
+    if(false == config_.PairGet(kHTTPLogPath, &jhttp_path))
+        config_.PairAdd(kHTTPLogPath, http_log_path_);
+    else
+        doc_root_ = jhttp_path.val();
 
     return;
 }
@@ -107,6 +137,17 @@ void HTTPConfig::LoadMaxBodySize()
         config_.PairAdd(kMaxBodySize, max_body_size_);
     else
         max_body_size_ = static_cast<int>(jsize.get_uint());
+
+    return;
+}
+//---------------------------------------------------------------------------
+void HTTPConfig::LoadPort()
+{
+    json::Value jport;
+    if(false == config_.PairGet(kPort, &jport))
+        config_.PairAdd(kPort, port_);
+    else
+        port_ = static_cast<short>(jport.get_uint());
 
     return;
 }

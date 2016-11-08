@@ -1,26 +1,24 @@
 //---------------------------------------------------------------------------
 #include "request_message.h"
 #include "codec.h"
+#include "http_config.h"
 #include "../depend/net/include/buffer.h"
 #include "../depend/net/include/tcp_connection.h"
-//---------------------------------------------------------------------------
-namespace
-{
-    const char kCRLF[] = {'\r', '\n'};
-
-    const size_t kHttpDataMax = 1024 * 128;
-}
 //---------------------------------------------------------------------------
 namespace tinyhttp
 {
 
 //---------------------------------------------------------------------------
+const char Codec::kCRLF[2] = {'\r', '\n'};
+//---------------------------------------------------------------------------
 void Codec::OnRead(const net::TCPConnPtr& tcp_conn, net::Buffer& buffer, uint64_t rcv_time)
 {
-    //is too much data
-    if(kHttpDataMax < buffer.ReadableBytes())
+    //recv too much data
+    if(MyHTTPConfig.max_header_size() < buffer.ReadableBytes())
     {
-        //todo log
+        if(callback_err_msg_)
+            callback_err_msg_(tcp_conn, "connection recv too much data");
+
         tcp_conn->ForceClose();
         return;
     }
@@ -31,91 +29,111 @@ void Codec::OnRead(const net::TCPConnPtr& tcp_conn, net::Buffer& buffer, uint64_
 
     RequestMessage* req_msg = std::static_pointer_cast<RequestMessage>(tcp_conn->any_).get();
 
-    //read request header
-    if(false == GetRequestHeader(tcp_conn, buffer))
+    int ostatus;
+    do
     {
-        callback_req_msg_(tcp_conn, rcv_time);
-        buffer.Retrieve(req_msg->rq_size_);
-        req_msg->reset();
-        return;
-    }
+        ostatus = req_msg->status_;
+        switch(req_msg->status_)
+        {
+            case RequestMessage::HEADER:
+                GetRequestHeader(tcp_conn, buffer);
+                break;
 
-    //read request line
-    if(false == GetRequestLines(tcp_conn, buffer))
-        return;
+            case RequestMessage::LINES:
+                GetRequestLines(tcp_conn, buffer);
+                break;
 
-    //check has body?
-    auto iter = req_msg->req_lines_.find(RequestMessage::kContentLength);
-    if(req_msg->req_lines_.end() != iter)
-    {
-        req_msg->body_      = const_cast<char*>(buffer.Peek() + req_msg->rq_size_);
-        req_msg->body_len_  = atoi(iter->second);
-        if(buffer.ReadableBytes() < static_cast<size_t>((req_msg->rq_size_+req_msg->body_len_)))
-            return;
+            case RequestMessage::BODY:
+                ReadBody(buffer, req_msg);
+                break;
 
-        req_msg->rq_size_ += req_msg->body_len_;
-    }
+            case RequestMessage::OK:
+                callback_req_msg_(tcp_conn, rcv_time);
 
-    callback_req_msg_(tcp_conn, rcv_time);
-    buffer.Retrieve(req_msg->rq_size_);
-    assert(0 == buffer.ReadableBytes());
-    req_msg->reset();
-    
+                buffer.Retrieve(req_msg->rq_size_);
+                req_msg->reset();
+                return;
+
+            case RequestMessage::FAILED:
+                if(callback_err_msg_)
+                    callback_err_msg_(tcp_conn, "request header or lines invaild");
+
+                buffer.Retrieve(req_msg->rq_size_);
+                req_msg->reset();
+
+                return;
+
+            default:
+                assert(0);
+                break;
+        }
+
+    }while(ostatus != req_msg->status_);
+
     return;
 }
 //---------------------------------------------------------------------------
-bool Codec::GetRequestHeader(const net::TCPConnPtr& tcp_conn, net::Buffer& buffer)
+void Codec::GetRequestHeader(const net::TCPConnPtr& tcp_conn, net::Buffer& buffer)
 {
     //already have method
     RequestMessage* req_msg = std::static_pointer_cast<RequestMessage>(tcp_conn->any_).get();
-    if(0 != req_msg->method_)
-        return true;
+    if(RequestMessage::HEADER != req_msg->status_)
+        return;
 
     char* begin = const_cast<char*>(buffer.Peek());
     const char* crlf = FindCRLF(begin, buffer.ReadableBytes());
     if(0 == crlf)
-        return true;
+        return;
 
     int idx = 0;
     int len = static_cast<int>(crlf - begin);
+    req_msg->rq_size_ += static_cast<int>(len + sizeof(kCRLF));
 
     ///|method|blank|URL|blank|ver|\r\n
 
     //method
-    if(false == CheckRequestMessage(begin, len)) return false;
+    if(false == CheckRequestHeader(begin, len))
+    {
+        req_msg->status_ = RequestMessage::FAILED;
+        return;
+    }
+
     for(; idx<len; idx++) if(isspace(begin[idx]))break;
     req_msg->method_ = begin;
     begin[idx++] = 0;
+    if(idx >= len)
+    {
+        req_msg->status_ = RequestMessage::FAILED;
+        return;
+    }
 
     //URL
     SkipSP(begin, len, idx);
     req_msg->url_ = begin + idx;
     for(; idx<len; idx++) if(isspace(begin[idx]))break;
     begin[idx++] = 0;
+    if(idx >= len)
+    {
+        req_msg->status_ = RequestMessage::FAILED;
+        return;
+    }
 
     //ver
     SkipSP(begin, len, idx);
     req_msg->version_ = begin + idx;
     begin[len] = 0;
-
-    req_msg->rq_size_ += static_cast<int>(len + sizeof(kCRLF));
-
-    if((0==req_msg->method_) || (0==req_msg->url_) || (0==req_msg->version_))
-    {
-        req_msg->method_ = 0;
-        return false;
-    }
     
-    return true;;
+    req_msg->status_ = RequestMessage::LINES;
+    return;
 }
 //---------------------------------------------------------------------------
-bool Codec::GetRequestLines(const net::TCPConnPtr& tcp_conn, net::Buffer& buffer)
+void Codec::GetRequestLines(const net::TCPConnPtr& tcp_conn, net::Buffer& buffer)
 {
     RequestMessage* req_msg = std::static_pointer_cast<RequestMessage>(tcp_conn->any_).get();
 
     //head method have nto parse
-    if(0 == req_msg->method_)
-        return false;
+    if(RequestMessage::LINES != req_msg->status_)
+        return;
 
     while(true)
     {
@@ -124,15 +142,16 @@ bool Codec::GetRequestLines(const net::TCPConnPtr& tcp_conn, net::Buffer& buffer
         char* begin = const_cast<char*>(buffer.Peek()) + req_msg->rq_size_;
         const char* crlf = FindCRLF(begin, readable);
         if(0 == crlf)
-            return false;
+            return;
 
         int len = static_cast<int>(crlf - begin);
+        req_msg->rq_size_ += static_cast<int>(len + sizeof(kCRLF));
 
         //\r\n\r\n
         if(0 == len)
         {
-            req_msg->rq_size_ += static_cast<int>(sizeof(kCRLF));
-            return true;
+            req_msg->status_ = RequestMessage::BODY;
+            return;
         }
 
         ///|head name|:| val|\r\n
@@ -149,9 +168,8 @@ bool Codec::GetRequestLines(const net::TCPConnPtr& tcp_conn, net::Buffer& buffer
         //can't find ':'
         if(idx == len)
         {
-            req_msg->method_ = 0;
-            req_msg->rq_size_ += static_cast<int>(len + sizeof(kCRLF));
-            return true;
+            req_msg->status_ = RequestMessage::FAILED;
+            return;
         }
 
         begin[idx] = 0;
@@ -164,11 +182,12 @@ bool Codec::GetRequestLines(const net::TCPConnPtr& tcp_conn, net::Buffer& buffer
         SkipSP(begin, len , idx);
         val = begin + idx;
         begin[len] = 0;
-        req_msg->rq_size_ += static_cast<int>(len + sizeof(kCRLF));
+
+        continue;
     }
 }
 //---------------------------------------------------------------------------
-bool Codec::CheckRequestMessage(const char* begin, int len)
+bool Codec::CheckRequestHeader(const char* begin, int len)
 {
     //max method len
     if(8 > len) return false;
@@ -184,9 +203,37 @@ bool Codec::CheckRequestMessage(const char* begin, int len)
     return false;
 }
 //---------------------------------------------------------------------------
-const char* Codec::FindCRLF(const char* begin, size_t len) const
+void Codec::ReadBody(net::Buffer& buffer, RequestMessage* req_msg)
 {
-    return static_cast<const char*>(memmem(begin, len, kCRLF, sizeof(kCRLF)));
+    if(RequestMessage::BODY != req_msg->status_)
+        return;
+
+    if(0 == req_msg->body_)
+    {
+        auto iter = req_msg->req_lines_.find(tinyhttp::RequestMessage::kContentLength);
+        if(req_msg->req_lines_.end() != iter)
+        {
+            req_msg->body_ = const_cast<char*>(buffer.Peek() + req_msg->rq_size_);
+            req_msg->body_len_ = atoi(iter->second);
+            if(MyHTTPConfig.max_body_size() < req_msg->body_len_)
+            {
+                req_msg->status_ = RequestMessage::FAILED;
+                return;
+            }
+        }
+        else
+        {
+            req_msg->status_ = RequestMessage::OK;
+            return;
+        }
+    }
+
+    if(buffer.ReadableBytes() < static_cast<size_t>((req_msg->rq_size_+req_msg->body_len_)))
+        return;
+
+    req_msg->rq_size_ += req_msg->body_len_;
+    req_msg->status_ = RequestMessage::OK;
+    return;
 }
 //---------------------------------------------------------------------------
 

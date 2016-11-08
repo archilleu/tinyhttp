@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------
 #include <iostream>
 #include <memory>
-#include "config.h"
+#include "http_config.h"
 #include "method.h"
 #include "http_server.h"
 #include "request_message.h"
@@ -72,8 +72,9 @@ void HTTPServer::Start()
     tcp_server.set_callback_high_water_mark(std::bind(&HTTPServer::OnHightWaterMark, this, std::placeholders::_1, std::placeholders::_2), 100);
 
     codec_.set_callback_req_msg(std::bind(&HTTPServer::OnRequestMessage, this, std::placeholders::_1, std::placeholders::_2));
+    codec_.set_callback_err_msg(std::bind(&HTTPServer::OnCodecError, this, std::placeholders::_1, std::placeholders::_2));
 
-    tcp_server.set_event_loop_nums(MyConfig.thread_nums());
+    tcp_server.set_event_loop_nums(static_cast<int>(MyHTTPConfig.thread_nums()));
     tcp_server.Start();
     main_loop_->Loop();
 
@@ -107,12 +108,6 @@ void HTTPServer::OnRequestMessage(const net::TCPConnPtr& tcp_conn, uint64_t rcv_
     std::cout << "recv time:" << base::Timestamp(rcv_time).Datetime(true) << std::endl;
 
     const RequestMessage* req_msg = std::static_pointer_cast<RequestMessage>(tcp_conn->any_).get();
-
-    if(0 == req_msg->method_)
-    {
-        ReplyBadRequest(tcp_conn);
-        return;
-    }
 
     if(!strcmp(RequestMessage::kGET, req_msg->method_))
     {
@@ -185,6 +180,16 @@ void HTTPServer::OnHightWaterMark(const net::TCPConnPtr& tcp_conn, size_t mark)
     std::cout << " mark:" << mark << std::endl;
 
     return;
+}
+//---------------------------------------------------------------------------
+void HTTPServer::OnCodecError(const net::TCPConnPtr& tcp_conn, const std::string& msg)
+{
+    std::cout << "name:" << tcp_conn->name() <<
+        " local: " << tcp_conn->local_addr().IPPort() <<
+        " peer: " << tcp_conn->peer_addr().IPPort();
+    std::cout << " err msg:" << msg << std::endl;
+
+    ReplyBadRequest(tcp_conn);
 }
 //---------------------------------------------------------------------------
 void HTTPServer::SignalUsr1()

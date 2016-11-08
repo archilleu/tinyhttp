@@ -5,7 +5,7 @@
 #include <memory>
 #include <unistd.h>
 #include <cstring>
-#include "config.h"
+#include "http_config.h"
 #include "method_web.h"
 #include "request_message.h"
 #include "codec.h"
@@ -15,8 +15,8 @@ namespace tinyhttp
 {
 
 //---------------------------------------------------------------------------
-__thread char responese_header[1024];
-__thread char file_buffer[1024*64];
+__thread char t_responese_header[1024];
+__thread char t_file_buffer[1024*64];
 //---------------------------------------------------------------------------
 void MethodWeb::GET(const net::TCPConnPtr& tcp_conn, uint64_t rcv_time)
 {
@@ -25,7 +25,7 @@ void MethodWeb::GET(const net::TCPConnPtr& tcp_conn, uint64_t rcv_time)
     req_msg->Dump();
 
     //get current doc root
-    std::string url = MyConfig.doc_root() + req_msg->url_;
+    std::string url = MyHTTPConfig.doc_root() + req_msg->url_;
     
     //send file
     ResponeseFile(tcp_conn, url);
@@ -81,14 +81,14 @@ void MethodWeb::CONNECT(const net::TCPConnPtr& tcp_conn, uint64_t rcv_time)
 //---------------------------------------------------------------------------
 void MethodWeb::ResponeseHeader(const net::TCPConnPtr& tcp_conn, const char* status_code, int body_len)
 {
-    snprintf(responese_header, sizeof(responese_header), 
+    snprintf(t_responese_header, sizeof(t_responese_header), 
     "HTTP/1.1 %s\r\n"
     "Content-Type: text/html\r\n"
     "Connection: keep-alive\r\n"
     "Content-Length: %d\r\n\r\n",
     status_code, body_len);
 
-    tcp_conn->Send(responese_header, strlen(responese_header));
+    tcp_conn->Send(t_responese_header, strlen(t_responese_header));
     return;
 }
 //---------------------------------------------------------------------------
@@ -136,12 +136,12 @@ void MethodWeb::ResponeseFile(const net::TCPConnPtr& tcp_conn, const std::string
         size_t size = st.st_size;
         while(0 < size)
         {
-            ssize_t rlen = read(fd, file_buffer, sizeof(file_buffer));
+            ssize_t rlen = read(fd, t_file_buffer, sizeof(t_file_buffer));
             if(0 >= rlen)
                 break;
 
             size -= rlen;
-            tcp_conn->Send(file_buffer, rlen);
+            tcp_conn->Send(t_file_buffer, rlen);
         }
 
         //read file fail

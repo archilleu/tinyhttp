@@ -8,30 +8,37 @@
 namespace tinyhttp 
 {
 
-class Config 
+class HTTPConfig 
 {
 public:
-    Config();
+    HTTPConfig();
 
     bool LoadCofig();
     bool SaveCofig();
 
-    const std::string& doc_root() const { return doc_root_; }
-    int thread_nums() const { return thread_nums_; }
-
+    //cfg file path
     void set_path(const std::string& p) { path_ = p; }
     const std::string& path() const { return path_; }
 
+    const std::string& doc_root() const { return doc_root_; }
+    size_t thread_nums() const { return thread_nums_; }
+    size_t max_header_size() const { return max_header_size_; }
+    size_t max_body_size() const { return max_body_size_; }
+
 private:
-    void DefaultConfig();
+    void DefaultHTTPConfig();
 
     void LoadWebRoot();
     void LoadThreadNums();
+    void LoadMaxHeaderSize();
+    void LoadMaxBodySize();
 
 private:
     //config item
     std::string doc_root_;
-    int thread_nums_; 
+    size_t thread_nums_; 
+    size_t max_header_size_;
+    size_t max_body_size_;
 
 private:
     std::string path_;
@@ -43,7 +50,7 @@ private:
     const static int kHour = kMinute * 60;
 };
 //---------------------------------------------------------------------------
-extern Config MyConfig;
+extern HTTPConfig MyHTTPConfig;
 //---------------------------------------------------------------------------
 }//namespace tinyhttp 
 //---------------------------------------------------------------------------

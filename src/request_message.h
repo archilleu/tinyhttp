@@ -17,7 +17,8 @@ class RequestMessage
 {
 public:
     RequestMessage()
-    :   method_(0),
+    :   status_(HEADER),
+        method_(0),
         version_(0),
         url_(0),
         rq_size_(0),
@@ -25,7 +26,8 @@ public:
         body_len_(0)
     {}
     RequestMessage(RequestMessage&& o)
-    :   method_(o.method_),
+    :   status_(o.status_),
+        method_(o.method_),
         version_(o.version_),
         url_(o.url_),
         req_lines_(std::move(o.req_lines_)),
@@ -33,6 +35,7 @@ public:
         body_(o.body_),
         body_len_(o.body_len_)
     {
+        o.status_   = HEADER;
         o.method_   = 0;
         o.version_  = 0;
         o.url_      = 0;
@@ -42,6 +45,7 @@ public:
     }
     RequestMessage& operator=(RequestMessage&& o)
     {
+        status_     = o.status_;
         method_     = o.method_;
         version_    = o.version_;
         url_        = o.url_;
@@ -50,6 +54,7 @@ public:
         body_       = o.body_;
         body_len_   = o.body_len_;
 
+        o.status_   = HEADER;
         o.method_   = 0;
         o.version_  = 0;
         o.url_      = 0;
@@ -61,19 +66,30 @@ public:
     }
     void reset()
     {
-        method_   = 0;
-        version_  = 0;
-        url_      = 0;
+        status_     = HEADER;
+        method_     = 0;
+        version_    = 0;
+        url_        = 0;
         req_lines_.clear();
-        rq_size_  = 0;
-        body_     = 0;
-        body_len_ = 0;
+        rq_size_    = 0;
+        body_       = 0;
+        body_len_   = 0;
     }
 
     //for debug
     void Dump() const;
 
 public:
+    //fsm
+    enum
+    {
+        HEADER = 1,
+        LINES,
+        BODY,
+        OK,
+        FAILED
+    }status_;
+
     char* method_;
     char* version_;
     char* url_;
@@ -87,10 +103,10 @@ public:
     };
     std::map<const char*, const char*, less> req_lines_;
 
-    int rq_size_;   //current parse request message size
+    size_t rq_size_;   //current parse request message size
 
     char* body_;
-    int body_len_;
+    size_t body_len_;
 
 public:
     //method

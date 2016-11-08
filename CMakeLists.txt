@@ -55,5 +55,5 @@ message(STATUS "INSTALL PATH ===> bin: " ${EXECUTABLE_OUTPUT_PATH} " lib: "
 #add subdirectory
 #add_subdirectory(<dir>)
 add_subdirectory(src)
-#add_subdirectory(test)
+add_subdirectory(test)
 #---------------------------------------------------------------------------

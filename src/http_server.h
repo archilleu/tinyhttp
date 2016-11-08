@@ -33,6 +33,8 @@ private:
     void OnWriteComplete(const net::TCPConnPtr& tcp_conn);
     void OnHightWaterMark(const net::TCPConnPtr& tcp_conn, size_t mark);
 
+    void OnCodecError(const net::TCPConnPtr& tcp_conn, const std::string& msg);
+
     void SignalUsr1();
 
 private:

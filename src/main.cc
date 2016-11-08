@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
 #include "http_server.h"
-#include "config.h"
+#include "http_config.h"
 #include "method_web.h"
 //---------------------------------------------------------------------------
 #include<string>
@@ -9,9 +9,9 @@ int main(int argc, char** argv)
     (void)argc;
     (void)argv;
 
-    tinyhttp::MyConfig.set_path("tinyhttp.cfg");
-    tinyhttp::MyConfig.LoadCofig();
-    tinyhttp::MyConfig.SaveCofig();
+    tinyhttp::MyHTTPConfig.set_path("tinyhttp.cfg");
+    tinyhttp::MyHTTPConfig.LoadCofig();
+    tinyhttp::MyHTTPConfig.SaveCofig();
 
     tinyhttp::MethodWeb method;
     tinyhttp::HTTPServer server(&method);

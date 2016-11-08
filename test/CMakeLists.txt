@@ -10,14 +10,14 @@ aux_source_directory(. DIR_TESTS)
 #---------------------------------------------------------------------------
 #add lib path
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../depend/base/lib)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../depend/json/lib)
 #---------------------------------------------------------------------------
 #generate test
-set(TESTNAME net_test)
-add_executable(${TESTNAME} ${DIR_TESTS})
+add_executable(test_codec test_codec.cc ../src/codec.cc ../src/http_config.cc
+    ../src/request_message.cc fake_buffer.cc fake_tcp_conn.cc fake_inetaddr.cc)
 #---------------------------------------------------------------------------
 #add link lib
-set(LIBNAME net)
-target_link_libraries(${TESTNAME} ${LIBNAME} base pthread)
+target_link_libraries(test_codec base json)
 #---------------------------------------------------------------------------
 #install target 
 #install(TARGETS json_test DESTINATION ${EXECUTABLE_OUTPUT_PATH})

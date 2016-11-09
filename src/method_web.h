@@ -23,15 +23,11 @@ private:
     void ResponeseCommonHeader(const net::TCPConnPtr& tcp_conn, const char* status_code, int content_type,  int body_len);
     void ResponeseNotFound(const net::TCPConnPtr& tcp_conn);
     void ResponeseForbidden(const net::TCPConnPtr& tcp_conn);
+    void ResponeseHead(const net::TCPConnPtr& tcp_conn, const std::string& path);
     void ResponeseFile(const net::TCPConnPtr& tcp_conn, const std::string& path);
 
 private:
-    enum
-    {
-        TYPE_TEXT_HTML=0,
-        TYPE_CHARSET_UTF
-    };
-    static const char* kType[];
+    int CheckURL(const net::TCPConnPtr& tcp_conn, const std::string& path);
 };
 
 }//namespace tinyhttp

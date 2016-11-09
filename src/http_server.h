@@ -35,6 +35,7 @@ private:
 
     void OnCodecError(const net::TCPConnPtr& tcp_conn, const std::string& msg);
 
+private:
     void SignalUsr1();
 
 private:

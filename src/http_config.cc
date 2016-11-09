@@ -92,7 +92,7 @@ void HTTPConfig::LoadNetLogPath()
     if(false == config_.PairGet(kNetLogPath, &jnet_path))
         config_.PairAdd(kNetLogPath, net_log_path_);
     else
-        doc_root_ = jnet_path.val();
+        net_log_path_ = jnet_path.val();
 
     return;
 }
@@ -103,7 +103,7 @@ void HTTPConfig::LoadHTTPLogPath()
     if(false == config_.PairGet(kHTTPLogPath, &jhttp_path))
         config_.PairAdd(kHTTPLogPath, http_log_path_);
     else
-        doc_root_ = jhttp_path.val();
+        http_log_path_ = jhttp_path.val();
 
     return;
 }
